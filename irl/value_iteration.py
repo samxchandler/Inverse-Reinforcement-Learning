@@ -70,7 +70,7 @@ def optimal_value(n_states, n_actions, transition_probabilities, reward,
     return v
 
 def find_policy(n_states, n_actions, transition_probabilities, reward, discount,
-                threshold=1e-2, v=None, stochastic=True):
+                threshold=1e-2, v=None, stochastic=False):
     """
     Find the optimal policy.
 
