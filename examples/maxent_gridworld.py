@@ -24,7 +24,7 @@ def main(grid_size, discount, n_trajectories, epochs, learning_rate):
     learning_rate: Gradient descent learning rate. float.
     """
 
-    wind = 0.3
+    wind = 0
     trajectory_length = 3*grid_size
 
     gw = gridworld.Gridworld(grid_size, wind, discount)

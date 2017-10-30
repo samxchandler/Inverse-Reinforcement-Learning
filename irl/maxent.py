@@ -136,7 +136,7 @@ def find_expected_svf(n_states, r, n_actions, discount,
         expected_svf[:, t] = 0
         for i, j, k in product(range(n_states), range(n_actions), range(n_states)):
             expected_svf[k, t] += (expected_svf[i, t-1] *
-                                  policy[i, j] * # Stochastic policy
+                                  policy[i] * # Stochastic policy
                                   transition_probability[i, j, k])
 
     return expected_svf.sum(axis=1)
