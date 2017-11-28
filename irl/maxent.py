@@ -44,7 +44,7 @@ def irl(feature_matrix, n_actions, discount, transition_probability,
 
     # Gradient descent on alpha.
     for i in range(epochs):
-        # print("i: {}".format(i))
+        print("epoch: {}".format(i+1))
         r = feature_matrix.dot(alpha)
         expected_svf = find_expected_svf(n_states, r, n_actions, discount,
                                          transition_probability, trajectories)
@@ -136,7 +136,7 @@ def find_expected_svf(n_states, r, n_actions, discount,
         expected_svf[:, t] = 0
         for i, j, k in product(range(n_states), range(n_actions), range(n_states)):
             expected_svf[k, t] += (expected_svf[i, t-1] *
-                                  policy[i] * # Stochastic policy
+                                  policy[i,j] * # Stochastic policy
                                   transition_probability[i, j, k])
 
     return expected_svf.sum(axis=1)
@@ -178,7 +178,7 @@ def find_policy(n_states, r, n_actions, discount,
     V = np.nan_to_num(np.ones((n_states, 1)) * float("-inf"))
 
     diff = np.ones((n_states,))
-    while (diff > 1e-4).all():  # Iterate until convergence.
+    while (diff > 1e-2).all():  # Iterate until convergence.
         new_V = r.copy()
         for j in range(n_actions):
             for i in range(n_states):

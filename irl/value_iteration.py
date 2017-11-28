@@ -70,7 +70,7 @@ def optimal_value(n_states, n_actions, transition_probabilities, reward,
     return v
 
 def find_policy(n_states, n_actions, transition_probabilities, reward, discount,
-                threshold=1e-2, v=None, stochastic=False):
+                threshold=1e-2, v=None, stochastic=True, obstacles = False):
     """
     Find the optimal policy.
 
@@ -94,12 +94,26 @@ def find_policy(n_states, n_actions, transition_probabilities, reward, discount,
     if stochastic:
         # Get Q using equation 9.2 from Ziebart's thesis.
         Q = np.zeros((n_states, n_actions))
+        Q_zero_comp = np.zeros((n_states, n_actions))
         for i in range(n_states):
+            zero_num = 0
             for j in range(n_actions):
                 p = transition_probabilities[i, j, :]
                 Q[i, j] = p.dot(reward + discount*v)
+                if Q[i,j] != 0:
+                    Q_zero_comp[i,j] = 1 
+            #if no valid action, give random action
+            #if (zero_num == n_actions) and obstacles:
+            #    Q[i,j] = 1
+
         Q -= Q.max(axis=1).reshape((n_states, 1))  # For numerical stability.
         Q = np.exp(Q)/np.exp(Q).sum(axis=1).reshape((n_states, 1))
+        if obstacles:
+            Q = np.multiply(Q, Q_zero_comp)
+            q_sum = np.sum(Q,axis=1,keepdims=True)
+            norm = np.tile(q_sum, (1, n_actions))
+            Q = np.divide(Q, norm)
+
         return Q
 
     def _policy(s):

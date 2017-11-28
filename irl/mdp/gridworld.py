@@ -13,7 +13,8 @@ class Gridworld(object):
     Gridworld MDP.
     """
 
-    def __init__(self, grid_size, wind, discount):
+    def __init__(self, grid_size, wind, discount, 
+                 reward_map = [None], custom_reward = [None]):
         """
         grid_size: Grid size. int.
         wind: Chance of moving randomly. float.
@@ -26,14 +27,24 @@ class Gridworld(object):
         self.n_states = grid_size**2
         self.grid_size = grid_size
         self.wind = wind
-        self.discount = discount
+        self.discount = discount	
+
+        if None in reward_map:
+            self.reward_map = None
+        else:
+            self.reward_map = reward_map
+        
+        if not None in custom_reward:
+            self.custom_reward = custom_reward
+        else:
+            self.custom_reward = None
 
         # Preconstruct the transition probability array.
         self.transition_probability = np.array(
             [[[self._transition_probability(i, j, k)
                for k in range(self.n_states)]
-              for j in range(self.n_actions)]
-             for i in range(self.n_states)])
+                for j in range(self.n_actions)]
+                 for i in range(self.n_states)])
 
     def __str__(self):
         return "Gridworld({}, {}, {})".format(self.grid_size, self.wind,
@@ -133,6 +144,10 @@ class Gridworld(object):
         if not self.neighbouring((xi, yi), (xk, yk)):
             return 0.0
 
+        if not None in self.reward_map:
+            if self.reward_map[yk][xk] == 'B':
+                return 0.0
+
         # Is k the intended state to move to?
         if (xi + xj, yi + yj) == (xk, yk):
             return 1 - self.wind + self.wind/self.n_actions
@@ -183,11 +198,13 @@ class Gridworld(object):
         state_int: State integer. int.
         -> Reward.
         """
-
-        if state_int == self.n_states - 1:
-            return 1
-        return 0
-
+        if None in self.custom_reward:
+            if state_int == self.n_states - 1:
+                return 1
+            return 0
+        else:
+            return self.custom_reward[state_int]
+    
     def average_reward(self, n_trajectories, trajectory_length, policy):
         """
         Calculate the average total reward obtained by following a given policy
@@ -212,7 +229,8 @@ class Gridworld(object):
 
     def optimal_policy(self, state_int):
         """
-        The optimal policy for this gridworld.
+        The optimal policy for a reward in the upper 
+        right hand corner.
 
         state_int: What state we are in. int.
         -> Action int.
@@ -230,7 +248,8 @@ class Gridworld(object):
 
     def optimal_policy_deterministic(self, state_int):
         """
-        Deterministic version of the optimal policy for this gridworld.
+        Deterministic version of the optimal policy for 
+        a reward in the upper right hand corner this gridworld.
 
         state_int: What state we are in. int.
         -> Action int.
@@ -240,6 +259,15 @@ class Gridworld(object):
         if sx < sy:
             return 0
         return 1
+
+    def set_custom_policy(self, policy):
+        self.custom_pol = policy    
+
+    def custom_policy(self, state_int):
+        """
+        Custom policy for reward 
+        """
+        return self.custom_pol[state_int]
 
     def generate_trajectories(self, n_trajectories, trajectory_length, policy,
                                     random_start=False):
@@ -267,15 +295,23 @@ class Gridworld(object):
                     action = self.actions[rn.randint(0, 4)]
                 else:
                     # Follow the given policy.
+                    # Policy can be default policy in class with function
+                    # format or custom as an array
+
                     action = self.actions[policy(self.point_to_int((sx, sy)))]
 
                 if (0 <= sx + action[0] < self.grid_size and
-                        0 <= sy + action[1] < self.grid_size):
+                        0 <= sy + action[1] < self.grid_size):                      
                     next_sx = sx + action[0]
                     next_sy = sy + action[1]
                 else:
                     next_sx = sx
                     next_sy = sy
+                #if next state is invalid, reset next state to current state
+                if not None in self.reward_map:
+                    if self.reward_map[next_sy][next_sx] == 'B': 
+                        next_sx = sx
+                        next_sy = sy         
 
                 state_int = self.point_to_int((sx, sy))
                 action_int = self.actions.index(action)
